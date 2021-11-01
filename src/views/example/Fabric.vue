@@ -8,9 +8,10 @@
             <Button type="primary" @click="drawPath">路径绘图</Button>
             <Button type="primary" @click="drawGroup">绘制组合图</Button>
             <Button type="primary" @click="removeDraw">删除首个图形</Button>
+            <Button type="primary" @click="drawImg">添加图片</Button>
         </div>
-        <canvas id="canvas" width="1000px" height="500px"></canvas>
-        <img src="" alt="picture" />
+        <canvas id="canvas" width="1000px" height="400px"></canvas>
+        <img id="img" src="/icon.png" alt="picture" />
     </div>
 </template>
 
@@ -29,25 +30,51 @@ export default {
         }
     },
     mounted() {
-        fabric.Object.prototype.getAngleInRadians = function () {
-            return (this.get('angle') / 180) * Math.PI
-        }
         this.initCanvas()
     },
     methods: {
         // 声明画布
         initCanvas() {
+            fabric.Object.prototype.getAngleInRadians = function () {
+                return (this.get('angle') / 180) * Math.PI
+            }
+            // 扩展toObject()附加name属性
+            fabric.Object.prototype.toObject = (function (toObject) {
+                return function () {
+                    return fabric.util.object.extend(toObject.call(this), {
+                        name: this.name
+                    })
+                }
+            })(fabric.Object.prototype.toObject)
+
             this.canvas = new fabric.Canvas('canvas', {
                 backgroundColor: 'rgb(100,100,200)'
+            })
+            console.log(this.canvas.toObject())
+
+            console.log(JSON.stringify(this.canvas))
+
+            this.canvas.on('mouse:down', options => {
+                console.log('options', options)
+                console.log(options.e.offsetX, options.e.offsetY)
+                console.log(options.target.type)
             })
             this.canvas.selection = false // 禁止全选，可单个选中
         },
         // 点
         drawPoint() {
-            const point = new fabric.Point({
-                x: 100,
-                y: 200
+            // 创建类
+            const Point = fabric.util.createClass({
+                initialize: function (x, y, color) {
+                    this.x = x || 0
+                    this.y = y || 0
+                    this.color = color || '#000'
+                },
+                toString: function () {
+                    return '(' + this.x + ',' + this.y + ') color: ' + this.color
+                }
             })
+            const point = new Point(100, 200, 'red')
             this.canvas.add(point)
         },
         // 矩形
@@ -62,10 +89,13 @@ export default {
                 angle: 10,
                 stroke: 'red' // 边框颜色
             })
-            rect.on('moving', e => {
-                console.log('triangle moving', e)
+            rect.on('modified', e => {
+                console.log('triangle modified', e)
             })
+            rect.name = 'rect1'
             console.log(rect.getAngleInRadians())
+            console.log(rect.toObject())
+            console.log(JSON.stringify(rect))
             // 添加图形至画布
             this.canvas.add(rect)
         },
@@ -121,22 +151,51 @@ export default {
             const text = new fabric.Text('Hello World', {
                 fontSize: 15,
                 originX: 'center', // 调整中心点的X轴坐标
-                originY: 'center' // 调整中心点的Y轴坐标
+                originY: 'center', // 调整中心点的Y轴坐标
+                // left: 10,
+                top: 60
             })
             // 组合
             const group = new fabric.Group([cricle, text], {
                 left: 250, // 距离画布左侧距离，单位像素
-                top: 250, // 距离上侧距离
-                angle: -10 // 旋转角度
+                top: 250 // 距离上侧距离
+                // angle: -10 // 旋转角度
             })
+
+            group.item(1).set({
+                text: 'hello',
+                fill: 'white'
+            })
+
             // 添加图形至画布
             this.canvas.add(group)
         },
         // 删除对象
         removeDraw() {
-            const obj = this.canvas.item(0) //canvas上添加的第一个对象
-            this.canvas.getObjects() // 获取canvas上所有的对象
-            this.canvas.remove(obj)
+            // const obj = this.canvas.item(0) //canvas上添加的第一个对象
+            console.log('objects', this.canvas.getObjects()) // 获取canvas上所有的对象
+            // this.canvas.remove(obj)
+        },
+        // 添加图片
+        drawImg() {
+            // 通过图像元素
+            const img = new fabric.Image(document.getElementById('img'), {
+                left: 750,
+                top: 150,
+                opacity: 0.5
+            })
+            this.canvas.add(img)
+
+            // 通过url
+            fabric.Image.fromURL(
+                'https://img0.baidu.com/it/u=3437217665,1564280326&fm=26&fmt=auto',
+                img => {
+                    img.left = 100
+                    img.top = 100
+                    img.scale(0.5).set('flipY', true)
+                    this.canvas.add(img)
+                }
+            )
         }
     }
 }
