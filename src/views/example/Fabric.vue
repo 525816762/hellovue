@@ -48,7 +48,7 @@ export default {
             })(fabric.Object.prototype.toObject)
 
             this.canvas = new fabric.Canvas('canvas', {
-                backgroundColor: 'rgb(100,100,200)'
+                backgroundColor: 'rgb(100,100,200, 0)'
             })
             console.log(this.canvas.toObject())
 
@@ -83,7 +83,7 @@ export default {
             const rect = new fabric.Rect({
                 left: 100, // 距离画布左侧距离，单位像素
                 top: 100, // 距离上侧距离
-                fill: 'white', // 填充颜色
+                fill: 'rgb(0, 0, 0, 0)', // 填充颜色
                 width: 100, // 方形宽度
                 height: 100, // 方形高度
                 angle: 10,
